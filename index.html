@@ -3,107 +3,151 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KC Service Angebotsrechner</title>
+<title>KC Service – Angebotsrechner</title>
 
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <style>
-body { font-family: Arial; margin:0; padding:20px; background:#f2f2f2; }
-.card { background:white; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); margin-bottom:20px; }
-h2 { margin-top:0; }
-label { display:block; margin-top:10px; }
-input, select { width:100%; padding:8px; margin-top:5px; border-radius:6px; border:1px solid #ccc; }
-button { margin-top:15px; padding:10px; width:100%; border:none; border-radius:8px; background:#2e7d32; color:white; font-size:16px; }
-.result { font-weight:bold; margin-top:15px; font-size:18px; }
+body{font-family:Arial;margin:0;padding:20px;background:#f2f2f2;}
+.card{background:white;padding:20px;border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.1);margin-bottom:20px;}
+h2{margin-top:0}
+label{display:block;margin-top:8px}
+input,select{width:100%;padding:8px;margin-top:4px;
+border-radius:6px;border:1px solid #ccc}
+button{margin-top:12px;padding:10px;width:100%;
+border:none;border-radius:8px;background:#2e7d32;
+color:white;font-size:15px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #ccc;padding:6px;text-align:left}
+.result{font-weight:bold;font-size:18px;margin-top:15px}
 </style>
 </head>
 <body>
 
 <div class="card">
 <h2>Kundendaten</h2>
-<label>Kunde<input type="text" id="kunde"></label>
-<label>Adresse<input type="text" id="adresse"></label>
+<label>Kunde<input id="kunde"></label>
+<label>Adresse<input id="adresse"></label>
+<label>Telefon<input id="telefon"></label>
+<label>Email<input id="email"></label>
 <label>Datum<input type="date" id="datum"></label>
 </div>
 
 <div class="card">
-<h2>Leistung</h2>
+<h2>Neue Position hinzufügen</h2>
 
-<label>Tätigkeit
-<select id="taetigkeit">
-<option>Malerarbeiten</option>
-<option>Rasen mähen</option>
-<option>Boden legen</option>
-<option>Entrümpelung</option>
-<option>Heckenschnitt</option>
+<label>Kategorie
+<select id="kategorie" onchange="kategorieWechsel()">
+<option value="hecke">Heckenschnitt</option>
+<option value="maler">Malerarbeiten</option>
+<option value="rasen">Rasen mähen</option>
+<option value="boden">Boden legen</option>
 </select>
 </label>
 
-<label>Preisart
-<select id="preisart" onchange="umschalten()">
-<option value="aufwand">Nach Aufwand (Stunden)</option>
-<option value="menge">Pauschal nach Menge</option>
-</select>
-</label>
+<div id="bereich"></div>
 
-<div id="aufwandBereich">
-<label>Stunden<input type="number" id="stunden"></label>
-<label>Preis pro Stunde (€)<input type="number" id="stundensatz"></label>
-</div>
-
-<div id="mengeBereich" style="display:none;">
-<label>Menge<input type="number" id="menge"></label>
-<label>Preis pro Einheit (€)<input type="number" id="einheitspreis"></label>
-</div>
-
-<button onclick="berechnen()">Berechnen</button>
-
-<div class="result" id="ergebnis"></div>
-
+<button onclick="positionHinzufuegen()">Position hinzufügen</button>
 </div>
 
 <div class="card">
-<button onclick="pdfErstellen()">Angebot als PDF speichern</button>
+<h2>Angebotspositionen</h2>
+<table id="tabelle">
+<tr>
+<th>Leistung</th>
+<th>Menge</th>
+<th>Einzelpreis</th>
+<th>Summe</th>
+</tr>
+</table>
+
+<div class="result" id="gesamt"></div>
+
+<button onclick="window.print()">Angebot als PDF speichern</button>
 </div>
 
 <script>
-function umschalten(){
-    let art = document.getElementById("preisart").value;
-    if(art === "aufwand"){
-        document.getElementById("aufwandBereich").style.display = "block";
-        document.getElementById("mengeBereich").style.display = "none";
-    } else {
-        document.getElementById("aufwandBereich").style.display = "none";
-        document.getElementById("mengeBereich").style.display = "block";
-    }
+let gesamtNetto = 0;
+
+function kategorieWechsel(){
+let kat = document.getElementById("kategorie").value;
+let html = "";
+
+if(kat==="hecke"){
+html=`
+<label>Schnittart
+<select id="schnittart">
+<option value="10">Grundschnitt (6–15 €/m)</option>
+<option value="20">Formschnitt (12–28 €/m)</option>
+<option value="30">Radikalschnitt (15–35 €/m)</option>
+</select></label>
+
+<label>Länge (m)<input type="number" id="menge"></label>
+<label>Preis pro Meter (€)<input type="number" id="preis"></label>
+
+<label>Entsorgung (m³)<input type="number" id="entsorgung"></label>
+<label>Preis Entsorgung €/m³<input type="number" id="entsorgungPreis"></label>
+`;
 }
 
-function berechnen(){
-    let art = document.getElementById("preisart").value;
-    let netto = 0;
-
-    if(art === "aufwand"){
-        let stunden = parseFloat(document.getElementById("stunden").value) || 0;
-        let satz = parseFloat(document.getElementById("stundensatz").value) || 0;
-        netto = stunden * satz;
-    } else {
-        let menge = parseFloat(document.getElementById("menge").value) || 0;
-        let preis = parseFloat(document.getElementById("einheitspreis").value) || 0;
-        netto = menge * preis;
-    }
-
-    let mwst = netto * 0.19;
-    let brutto = netto + mwst;
-
-    document.getElementById("ergebnis").innerHTML =
-        "Netto: " + netto.toFixed(2) + " €<br>" +
-        "MwSt (19%): " + mwst.toFixed(2) + " €<br>" +
-        "Brutto: " + brutto.toFixed(2) + " €";
+if(kat==="maler"){
+html=`
+<label>Fläche (m²)<input type="number" id="menge"></label>
+<label>Preis pro m² (€)<input type="number" id="preis"></label>
+`;
 }
 
-function pdfErstellen(){
-    window.print();
+if(kat==="rasen"){
+html=`
+<label>Fläche (m²)<input type="number" id="menge"></label>
+<label>Preis pro m² (€)<input type="number" id="preis"></label>
+`;
+}
+
+if(kat==="boden"){
+html=`
+<label>Fläche (m²)<input type="number" id="menge"></label>
+<label>Preis pro m² (€)<input type="number" id="preis"></label>
+`;
+}
+
+document.getElementById("bereich").innerHTML = html;
+}
+kategorieWechsel();
+
+function positionHinzufuegen(){
+
+let kat = document.getElementById("kategorie").value;
+let menge = parseFloat(document.getElementById("menge").value)||0;
+let preis = parseFloat(document.getElementById("preis").value)||0;
+let summe = menge*preis;
+
+if(kat==="hecke"){
+let ents = parseFloat(document.getElementById("entsorgung").value)||0;
+let entsPreis = parseFloat(document.getElementById("entsorgungPreis").value)||0;
+summe += ents*entsPreis;
+}
+
+gesamtNetto += summe;
+
+let row = document.createElement("tr");
+row.innerHTML = `
+<td>${kat}</td>
+<td>${menge}</td>
+<td>${preis.toFixed(2)} €</td>
+<td>${summe.toFixed(2)} €</td>
+`;
+document.getElementById("tabelle").appendChild(row);
+
+let mwst = gesamtNetto*0.19;
+let brutto = gesamtNetto+mwst;
+
+document.getElementById("gesamt").innerHTML =
+"Netto: "+gesamtNetto.toFixed(2)+" €<br>"+
+"MwSt 19%: "+mwst.toFixed(2)+" €<br>"+
+"Brutto: "+brutto.toFixed(2)+" €";
 }
 </script>
 
