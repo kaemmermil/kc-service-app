@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K&C Service – Profi Angebot</title>
+<title>K&C Service – Angebot</title>
 
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
@@ -21,9 +21,9 @@ background:#1b5e20;color:white;border-radius:6px}
 table{width:100%;border-collapse:collapse;margin-top:10px}
 th,td{border:1px solid #ccc;padding:6px}
 .summe{margin-top:15px;font-size:18px;font-weight:bold}
-.warn{color:red;font-weight:bold}
+.hidden{display:none}
 @media print{
-button{display:none}
+button,.no-print{display:none}
 body{background:white}
 .container{box-shadow:none}
 }
@@ -44,45 +44,31 @@ body{background:white}
 <hr>
 
 <div class="section">
-<h3>Heckenschnitt – Profi Kalkulation</h3>
-
-<label>Schnittart
-<select id="schnittart" onchange="preisVorschlag()">
-<option value="10">Grundschnitt (6–15 €/m)</option>
-<option value="20">Formschnitt (12–28 €/m)</option>
-<option value="30">Radikalschnitt (15–35 €/m)</option>
+<h3>Kategorie wählen</h3>
+<select id="kategorie" onchange="kategorieWechsel()">
+<option value="">-- Bitte wählen --</option>
+<option value="hecke">Heckenschnitt</option>
+<option value="maler">Malerarbeiten</option>
+<option value="rasen">Rasen mähen</option>
+<option value="boden">Boden legen</option>
+<option value="elektrik">Elektrik</option>
 </select>
-</label>
-
-<label>Länge (m)<input type="number" id="meter"></label>
-
-<label>Preis pro Meter (€)<input type="number" id="preisProMeter"></label>
-
-<label>Entsorgung (m³)<input type="number" id="entsorgung"></label>
-<label>Preis Entsorgung €/m³<input type="number" id="entsorgungPreis"></label>
-
-<label>Hebebühne Stunden<input type="number" id="buehneStd"></label>
-<label>Preis Hebebühne €/h<input type="number" id="buehnePreis"></label>
-
-<label>Gewinnaufschlag (%)<input type="number" id="aufschlag" value="15"></label>
-
-<button onclick="berechnen()">Berechnen & hinzufügen</button>
-
-<div id="warnung" class="warn"></div>
 </div>
+
+<div id="modul" class="section hidden no-print"></div>
 
 <div class="section">
 <h3>Leistungsübersicht</h3>
 <table id="tabelle">
 <tr>
 <th>Leistung</th>
-<th>Netto</th>
-<th>Aktion</th>
+<th>Summe</th>
+<th class="no-print">X</th>
 </tr>
 </table>
 
 <div class="summe" id="gesamt"></div>
-<button onclick="window.print()">Als PDF speichern</button>
+<button class="no-print" onclick="window.print()">Als PDF speichern</button>
 </div>
 
 </div>
@@ -90,48 +76,103 @@ body{background:white}
 <script>
 let gesamtNetto=0;
 
-function preisVorschlag(){
-let art=document.getElementById("schnittart").value;
-document.getElementById("preisProMeter").value=art;
+function kategorieWechsel(){
+let kat=document.getElementById("kategorie").value;
+let modul=document.getElementById("modul");
+modul.classList.remove("hidden");
+
+if(kat==="hecke"){
+modul.innerHTML=`
+<h3>Heckenschnitt</h3>
+<label>Schnittart
+<select>
+<option>Grundschnitt (6–15 €/m)</option>
+<option>Formschnitt (12–28 €/m)</option>
+<option>Radikalschnitt (15–35 €/m)</option>
+</select></label>
+<label>Länge (m)<input type="number" id="meter"></label>
+<label>Preis pro Meter (€)<input type="number" id="preis"></label>
+<label>Entsorgung (m³)<input type="number" id="ents"></label>
+<label>Preis Entsorgung €/m³<input type="number" id="entsPreis"></label>
+<label>Hebebühne Stunden<input type="number" id="std"></label>
+<label>Preis Hebebühne €/h<input type="number" id="stdPreis"></label>
+<button onclick="heckeAdd()">Hinzufügen</button>
+`;
 }
 
-preisVorschlag();
+if(kat==="maler"||kat==="rasen"||kat==="boden"){
+modul.innerHTML=`
+<label>Berechnungsart
+<select id="art" onchange="artWechsel()">
+<option value="menge">Nach m²</option>
+<option value="stunden">Nach Zeit</option>
+</select></label>
 
-function berechnen(){
+<div id="mengeBereich">
+<label>Menge (m²)<input type="number" id="menge"></label>
+<label>Preis pro m² (€)<input type="number" id="preis"></label>
+</div>
 
-let meter=parseFloat(meter.value)||0;
-let preis=parseFloat(preisProMeter.value)||0;
-let ents=parseFloat(entsorgung.value)||0;
-let entsP=parseFloat(entsorgungPreis.value)||0;
-let std=parseFloat(buehneStd.value)||0;
-let stdP=parseFloat(buehnePreis.value)||0;
-let auf=parseFloat(aufschlag.value)||0;
+<div id="stundenBereich" class="hidden">
+<label>Stunden<input type="number" id="stunden"></label>
+<label>Stundensatz (€)<input type="number" id="satz"></label>
+<label>Material (€)<input type="number" id="material"></label>
+</div>
 
-let arbeitsKosten=meter*preis;
-let entsorgungKosten=ents*entsP;
-let buehneKosten=std*stdP;
+<button onclick="standardAdd('${kat}')">Hinzufügen</button>
+`;
+}
 
-let basis=arbeitsKosten+entsorgungKosten+buehneKosten;
+if(kat==="elektrik"){
+modul.innerHTML=`
+<h3>Elektrik (nur Zeitaufwand)</h3>
+<label>Stunden<input type="number" id="stunden"></label>
+<label>Stundensatz (€)<input type="number" id="satz"></label>
+<label>Material (€)<input type="number" id="material"></label>
+<button onclick="elektrikAdd()">Hinzufügen</button>
+`;
+}
+}
 
-let gewinn=basis*(auf/100);
-let endNetto=basis+gewinn;
+function artWechsel(){
+document.getElementById("mengeBereich").classList.toggle("hidden");
+document.getElementById("stundenBereich").classList.toggle("hidden");
+}
 
-if(preis<6){
-document.getElementById("warnung").innerHTML=
-"Warnung: Preis unter Mindestbereich!";
+function heckeAdd(){
+let sum=
+(parseFloat(meter.value)||0)*(parseFloat(preis.value)||0)+
+(parseFloat(ents.value)||0)*(parseFloat(entsPreis.value)||0)+
+(parseFloat(std.value)||0)*(parseFloat(stdPreis.value)||0);
+addRow("Heckenschnitt",sum);
+}
+
+function standardAdd(text){
+let art=document.getElementById("art").value;
+let sum=0;
+if(art==="menge"){
+sum=(parseFloat(menge.value)||0)*(parseFloat(preis.value)||0);
 }else{
-document.getElementById("warnung").innerHTML="";
+sum=(parseFloat(stunden.value)||0)*(parseFloat(satz.value)||0)+
+(parseFloat(material.value)||0);
+}
+addRow(text,sum);
 }
 
-gesamtNetto+=endNetto;
+function elektrikAdd(){
+let sum=(parseFloat(stunden.value)||0)*(parseFloat(satz.value)||0)+
+(parseFloat(material.value)||0);
+addRow("Elektrik",sum);
+}
 
+function addRow(text,sum){
+gesamtNetto+=sum;
 let row=document.createElement("tr");
 row.innerHTML=`
-<td>Heckenschnitt</td>
-<td>${endNetto.toFixed(2)} €</td>
-<td><button onclick="deleteRow(this,${endNetto})">X</button></td>
+<td>${text}</td>
+<td>${sum.toFixed(2)} €</td>
+<td class="no-print"><button onclick="deleteRow(this,${sum})">X</button></td>
 `;
-
 document.getElementById("tabelle").appendChild(row);
 updateSum();
 }
