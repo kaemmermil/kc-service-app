@@ -55,7 +55,6 @@ body{background:white}
 </select>
 </div>
 
-<!-- MODULE CONTAINER -->
 <div id="modulContainer" class="section hidden no-print"></div>
 
 <div class="section">
@@ -82,7 +81,32 @@ let kat=document.getElementById("kategorie").value;
 let container=document.getElementById("modulContainer");
 container.classList.remove("hidden");
 
-let html=`
+if(kat==="hecke"){
+container.innerHTML=`
+<h3>Heckenschnitt Kalkulation</h3>
+
+<label>Schnittart
+<select>
+<option>Grundschnitt (6–15 €/m)</option>
+<option>Formschnitt (12–28 €/m)</option>
+<option>Radikalschnitt (15–35 €/m)</option>
+</select>
+</label>
+
+<label>Länge (m)<input type="number" id="hecke_m"></label>
+<label>Preis pro Meter (€)<input type="number" id="hecke_preis"></label>
+
+<label>Entsorgung (m³)<input type="number" id="entsorgung_m3"></label>
+<label>Preis Entsorgung €/m³<input type="number" id="entsorgung_preis"></label>
+
+<label>Hebebühne Stunden<input type="number" id="buehne_std"></label>
+<label>Preis Hebebühne €/h<input type="number" id="buehne_preis"></label>
+
+<button onclick="heckeHinzufuegen()">Hinzufügen</button>
+`;
+}
+else{
+container.innerHTML=`
 <label>Berechnungsart
 <select id="art" onchange="artWechsel()">
 <option value="menge">Nach Menge</option>
@@ -103,8 +127,7 @@ let html=`
 
 <button onclick="positionHinzufuegen('${kat}')">Hinzufügen</button>
 `;
-
-container.innerHTML=html;
+}
 }
 
 function artWechsel(){
@@ -112,8 +135,15 @@ document.getElementById("mengeBereich").classList.toggle("hidden");
 document.getElementById("stundenBereich").classList.toggle("hidden");
 }
 
-function positionHinzufuegen(kat){
+function heckeHinzufuegen(){
+let sum=
+(parseFloat(hecke_m.value)||0)*(parseFloat(hecke_preis.value)||0)+
+(parseFloat(entsorgung_m3.value)||0)*(parseFloat(entsorgung_preis.value)||0)+
+(parseFloat(buehne_std.value)||0)*(parseFloat(buehne_preis.value)||0);
+addRow("Heckenschnitt",sum);
+}
 
+function positionHinzufuegen(kat){
 let art=document.getElementById("art").value;
 let sum=0;
 
@@ -127,16 +157,17 @@ let satz=parseFloat(document.getElementById("stundensatz").value)||0;
 let mat=parseFloat(document.getElementById("material").value)||0;
 sum=(std*satz)+mat;
 }
+addRow(kat,sum);
+}
 
+function addRow(text,sum){
 gesamtNetto+=sum;
-
 let row=document.createElement("tr");
 row.innerHTML=`
-<td>${kat}</td>
+<td>${text}</td>
 <td>${sum.toFixed(2)} €</td>
 <td class="no-print"><button onclick="deleteRow(this,${sum})">X</button></td>
 `;
-
 document.getElementById("tabelle").appendChild(row);
 updateSum();
 }
