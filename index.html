@@ -3,83 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>KC Service</title>
+<title>KC Service Angebotsrechner</title>
 
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="KC Service">
 
 <style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background: #f2f2f2;
-}
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-h1 {
-    text-align: center;
-}
-label {
-    display: block;
-    margin: 8px 0;
-}
-button {
-    margin-top: 15px;
-    padding: 10px;
-    width: 100%;
-    border: none;
-    border-radius: 8px;
-    background: #2e7d32;
-    color: white;
-    font-size: 16px;
-}
-.result {
-    margin-top: 15px;
-    font-weight: bold;
-}
+body { font-family: Arial; margin:0; padding:20px; background:#f2f2f2; }
+.card { background:white; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); margin-bottom:20px; }
+h2 { margin-top:0; }
+label { display:block; margin-top:10px; }
+input, select { width:100%; padding:8px; margin-top:5px; border-radius:6px; border:1px solid #ccc; }
+button { margin-top:15px; padding:10px; width:100%; border:none; border-radius:8px; background:#2e7d32; color:white; font-size:16px; }
+.result { font-weight:bold; margin-top:15px; font-size:18px; }
 </style>
 </head>
-
 <body>
 
 <div class="card">
-<h1>KC Service</h1>
+<h2>Kundendaten</h2>
+<label>Kunde<input type="text" id="kunde"></label>
+<label>Adresse<input type="text" id="adresse"></label>
+<label>Datum<input type="date" id="datum"></label>
+</div>
 
-<h3>Tätigkeiten auswählen:</h3>
+<div class="card">
+<h2>Leistung</h2>
 
-<label><input type="checkbox" value="Malerarbeiten"> Malerarbeiten</label>
-<label><input type="checkbox" value="Rasen mähen"> Rasen mähen</label>
-<label><input type="checkbox" value="Boden legen"> Boden legen</label>
-<label><input type="checkbox" value="Entrümpelung"> Entrümpelung</label>
-<label><input type="checkbox" value="Heckenschnitt"> Heckenschnitt</label>
+<label>Tätigkeit
+<select id="taetigkeit">
+<option>Malerarbeiten</option>
+<option>Rasen mähen</option>
+<option>Boden legen</option>
+<option>Entrümpelung</option>
+<option>Heckenschnitt</option>
+</select>
+</label>
 
-<button onclick="anzeigen()">Auswahl anzeigen</button>
+<label>Preisart
+<select id="preisart" onchange="umschalten()">
+<option value="aufwand">Nach Aufwand (Stunden)</option>
+<option value="menge">Pauschal nach Menge</option>
+</select>
+</label>
 
-<div class="result" id="ausgabe"></div>
+<div id="aufwandBereich">
+<label>Stunden<input type="number" id="stunden"></label>
+<label>Preis pro Stunde (€)<input type="number" id="stundensatz"></label>
+</div>
+
+<div id="mengeBereich" style="display:none;">
+<label>Menge<input type="number" id="menge"></label>
+<label>Preis pro Einheit (€)<input type="number" id="einheitspreis"></label>
+</div>
+
+<button onclick="berechnen()">Berechnen</button>
+
+<div class="result" id="ergebnis"></div>
 
 </div>
 
+<div class="card">
+<button onclick="pdfErstellen()">Angebot als PDF speichern</button>
+</div>
+
 <script>
-function anzeigen() {
-    let checked = document.querySelectorAll('input[type="checkbox"]:checked');
-    let liste = [];
-
-    checked.forEach((box) => {
-        liste.push(box.value);
-    });
-
-    if(liste.length === 0){
-        document.getElementById("ausgabe").innerHTML = "Keine Tätigkeit ausgewählt.";
+function umschalten(){
+    let art = document.getElementById("preisart").value;
+    if(art === "aufwand"){
+        document.getElementById("aufwandBereich").style.display = "block";
+        document.getElementById("mengeBereich").style.display = "none";
     } else {
-        document.getElementById("ausgabe").innerHTML = "Ausgewählt: " + liste.join(", ");
+        document.getElementById("aufwandBereich").style.display = "none";
+        document.getElementById("mengeBereich").style.display = "block";
     }
+}
+
+function berechnen(){
+    let art = document.getElementById("preisart").value;
+    let netto = 0;
+
+    if(art === "aufwand"){
+        let stunden = parseFloat(document.getElementById("stunden").value) || 0;
+        let satz = parseFloat(document.getElementById("stundensatz").value) || 0;
+        netto = stunden * satz;
+    } else {
+        let menge = parseFloat(document.getElementById("menge").value) || 0;
+        let preis = parseFloat(document.getElementById("einheitspreis").value) || 0;
+        netto = menge * preis;
+    }
+
+    let mwst = netto * 0.19;
+    let brutto = netto + mwst;
+
+    document.getElementById("ergebnis").innerHTML =
+        "Netto: " + netto.toFixed(2) + " €<br>" +
+        "MwSt (19%): " + mwst.toFixed(2) + " €<br>" +
+        "Brutto: " + brutto.toFixed(2) + " €";
+}
+
+function pdfErstellen(){
+    window.print();
 }
 </script>
 
