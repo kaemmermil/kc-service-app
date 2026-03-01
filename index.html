@@ -23,6 +23,7 @@ table{width:100%;border-collapse:collapse;margin-top:10px}
 th,td{border:1px solid #ccc;padding:6px;text-align:left}
 .summe{margin-top:15px;font-size:18px;font-weight:bold}
 .no-print{margin-top:10px}
+.hidden{display:none}
 @media print{
 button,.no-print{display:none}
 body{background:white}
@@ -45,26 +46,25 @@ body{background:white}
 <hr>
 
 <div class="section">
-<h3>Angebotsdaten</h3>
-<label>Angebotsnummer<input id="angebotNr" readonly></label>
-<label>Datum<input type="date" id="datum"></label>
+<h3>Kategorie auswählen</h3>
+<select id="kategorie" onchange="kategorieWechsel()">
+<option value="">-- Bitte wählen --</option>
+<option value="hecke">Heckenschnitt</option>
+<option value="maler">Malerarbeiten</option>
+<option value="rasen">Rasen mähen</option>
+<option value="boden">Boden legen</option>
+</select>
 </div>
 
-<div class="section">
-<h3>Kundendaten</h3>
-<label>Kunde<input id="kunde"></label>
-<label>Email<input id="email"></label>
-</div>
-
-<!-- HECKENMODUL -->
-<div class="section no-print">
-<h3>Heckenschnitt kalkulieren</h3>
+<!-- HECKE -->
+<div id="heckeModul" class="section hidden no-print">
+<h3>Heckenschnitt Kalkulation</h3>
 
 <label>Schnittart
-<select id="schnittart">
-<option value="10">Grundschnitt (6–15 €/m)</option>
-<option value="20">Formschnitt (12–28 €/m)</option>
-<option value="30">Radikalschnitt (15–35 €/m)</option>
+<select>
+<option>Grundschnitt (6–15 €/m)</option>
+<option>Formschnitt (12–28 €/m)</option>
+<option>Radikalschnitt (15–35 €/m)</option>
 </select>
 </label>
 
@@ -77,16 +77,31 @@ body{background:white}
 <label>Hebebühne Stunden<input type="number" id="buehne_std"></label>
 <label>Preis Hebebühne €/h<input type="number" id="buehne_preis"></label>
 
-<button onclick="heckeHinzufuegen()">Heckenschnitt hinzufügen</button>
+<button onclick="heckeHinzufuegen()">Hinzufügen</button>
 </div>
 
-<div class="section no-print">
-<h3>Manuelle Position hinzufügen</h3>
-<label>Bezeichnung<input id="bez"></label>
-<label>Arbeitszeit (Std)<input type="number" id="stunden"></label>
-<label>Stundensatz (€)<input type="number" id="stundensatz"></label>
-<label>Materialkosten (€)<input type="number" id="material"></label>
-<button onclick="addPosition()">Hinzufügen</button>
+<!-- MALER -->
+<div id="malerModul" class="section hidden no-print">
+<h3>Malerarbeiten</h3>
+<label>Fläche (m²)<input type="number" id="maler_m2"></label>
+<label>Preis pro m² (€)<input type="number" id="maler_preis"></label>
+<button onclick="malerHinzufuegen()">Hinzufügen</button>
+</div>
+
+<!-- RASEN -->
+<div id="rasenModul" class="section hidden no-print">
+<h3>Rasen mähen</h3>
+<label>Fläche (m²)<input type="number" id="rasen_m2"></label>
+<label>Preis pro m² (€)<input type="number" id="rasen_preis"></label>
+<button onclick="rasenHinzufuegen()">Hinzufügen</button>
+</div>
+
+<!-- BODEN -->
+<div id="bodenModul" class="section hidden no-print">
+<h3>Boden legen</h3>
+<label>Fläche (m²)<input type="number" id="boden_m2"></label>
+<label>Preis pro m² (€)<input type="number" id="boden_preis"></label>
+<button onclick="bodenHinzufuegen()">Hinzufügen</button>
 </div>
 
 <div class="section">
@@ -106,71 +121,66 @@ body{background:white}
 </div>
 
 <script>
-let counter = localStorage.getItem("angebotCounter") || 1;
-let gesamtNetto = 0;
+let gesamtNetto=0;
 
-function generateNr(){
-let jahr = new Date().getFullYear();
-document.getElementById("angebotNr").value =
-jahr + "-" + String(counter).padStart(4,"0");
+function kategorieWechsel(){
+document.getElementById("heckeModul").classList.add("hidden");
+document.getElementById("malerModul").classList.add("hidden");
+document.getElementById("rasenModul").classList.add("hidden");
+document.getElementById("bodenModul").classList.add("hidden");
+
+let kat=document.getElementById("kategorie").value;
+if(kat==="hecke")document.getElementById("heckeModul").classList.remove("hidden");
+if(kat==="maler")document.getElementById("malerModul").classList.remove("hidden");
+if(kat==="rasen")document.getElementById("rasenModul").classList.remove("hidden");
+if(kat==="boden")document.getElementById("bodenModul").classList.remove("hidden");
 }
-generateNr();
 
 function heckeHinzufuegen(){
-
-let m = parseFloat(document.getElementById("hecke_m").value)||0;
-let preis = parseFloat(document.getElementById("hecke_preis").value)||0;
-let ents = parseFloat(document.getElementById("entsorgung_m3").value)||0;
-let entsPreis = parseFloat(document.getElementById("entsorgung_preis").value)||0;
-let std = parseFloat(document.getElementById("buehne_std").value)||0;
-let stdPreis = parseFloat(document.getElementById("buehne_preis").value)||0;
-
-let sum = (m*preis)+(ents*entsPreis)+(std*stdPreis);
-gesamtNetto += sum;
-
-let row = document.createElement("tr");
-row.innerHTML = `
-<td>Heckenschnitt</td>
-<td>${sum.toFixed(2)} €</td>
-<td class="no-print"><button onclick="deleteRow(this,${sum})">X</button></td>
-`;
-
-document.getElementById("tabelle").appendChild(row);
-updateSum();
+let sum=
+(parseFloat(hecke_m.value)||0)*(parseFloat(hecke_preis.value)||0)+
+(parseFloat(entsorgung_m3.value)||0)*(parseFloat(entsorgung_preis.value)||0)+
+(parseFloat(buehne_std.value)||0)*(parseFloat(buehne_preis.value)||0);
+addRow("Heckenschnitt",sum);
 }
 
-function addPosition(){
-let bez = document.getElementById("bez").value;
-let std = parseFloat(document.getElementById("stunden").value)||0;
-let satz = parseFloat(document.getElementById("stundensatz").value)||0;
-let material = parseFloat(document.getElementById("material").value)||0;
+function malerHinzufuegen(){
+let sum=(parseFloat(maler_m2.value)||0)*(parseFloat(maler_preis.value)||0);
+addRow("Malerarbeiten",sum);
+}
 
-let sum = (std*satz)+material;
-gesamtNetto += sum;
+function rasenHinzufuegen(){
+let sum=(parseFloat(rasen_m2.value)||0)*(parseFloat(rasen_preis.value)||0);
+addRow("Rasen mähen",sum);
+}
 
-let row = document.createElement("tr");
-row.innerHTML = `
-<td>${bez}</td>
+function bodenHinzufuegen(){
+let sum=(parseFloat(boden_m2.value)||0)*(parseFloat(boden_preis.value)||0);
+addRow("Boden legen",sum);
+}
+
+function addRow(text,sum){
+gesamtNetto+=sum;
+let row=document.createElement("tr");
+row.innerHTML=`<td>${text}</td>
 <td>${sum.toFixed(2)} €</td>
-<td class="no-print"><button onclick="deleteRow(this,${sum})">X</button></td>
-`;
-
+<td class="no-print"><button onclick="deleteRow(this,${sum})">X</button></td>`;
 document.getElementById("tabelle").appendChild(row);
 updateSum();
 }
 
 function deleteRow(btn,sum){
 btn.parentNode.parentNode.remove();
-gesamtNetto -= sum;
+gesamtNetto-=sum;
 updateSum();
 }
 
 function updateSum(){
-let mwst = gesamtNetto*0.19;
-let brutto = gesamtNetto+mwst;
-document.getElementById("gesamt").innerHTML =
+let mwst=gesamtNetto*0.19;
+let brutto=gesamtNetto+mwst;
+document.getElementById("gesamt").innerHTML=
 "Netto: "+gesamtNetto.toFixed(2)+" €<br>"+
-"MwSt (19%): "+mwst.toFixed(2)+" €<br>"+
+"MwSt 19%: "+mwst.toFixed(2)+" €<br>"+
 "Brutto: "+brutto.toFixed(2)+" €";
 }
 </script>
