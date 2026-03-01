@@ -3,18 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KC Service – Angebot</title>
+<title>KC Service – Profi Angebot</title>
 
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <style>
 body{font-family:Arial;margin:0;padding:20px;background:#f2f2f2}
-.container{background:white;padding:30px;max-width:900px;margin:auto;
+.container{background:white;padding:30px;max-width:1000px;margin:auto;
 box-shadow:0 4px 12px rgba(0,0,0,0.1)}
 h1{margin:0}
-.header{display:flex;justify-content:space-between;align-items:center}
-.logo{height:80px}
 .section{margin-top:20px}
 label{display:block;margin-top:6px}
 input,select{width:100%;padding:6px;margin-top:3px}
@@ -23,11 +21,10 @@ background:#2e7d32;color:white;border-radius:6px}
 table{width:100%;border-collapse:collapse;margin-top:10px}
 th,td{border:1px solid #ccc;padding:6px;text-align:left}
 .summe{margin-top:15px;font-size:18px;font-weight:bold}
-.print-only{display:none}
+.no-print{margin-top:10px}
 @media print{
-body{background:white;padding:0}
 button,.no-print{display:none}
-.print-only{display:block}
+body{background:white}
 .container{box-shadow:none}
 }
 </style>
@@ -36,16 +33,9 @@ button,.no-print{display:none}
 
 <div class="container">
 
-<div class="header">
-<div>
-<h1>KC Service</h1>
-<p>Maler- & Hausmeisterservice</p>
-</div>
-<img src="apple-touch-icon.png" class="logo">
-</div>
+<h1>KC Service – Angebot</h1>
 
 <div class="section">
-<h3>Angebotsdaten</h3>
 <label>Angebotsnummer
 <input id="angebotNr" readonly>
 </label>
@@ -63,13 +53,18 @@ button,.no-print{display:none}
 </div>
 
 <div class="section no-print">
-<h3>Position hinzufügen</h3>
+<h3>Gewerk wählen</h3>
 
-<label>Bezeichnung<input id="bez"></label>
-<label>Menge<input type="number" id="menge"></label>
-<label>Einzelpreis (€)<input type="number" id="preis"></label>
+<select id="gewerk" onchange="gewerkWechsel()">
+<option value="hecke">Heckenschnitt</option>
+<option value="maler">Malerarbeiten</option>
+<option value="rasen">Rasen mähen</option>
+<option value="boden">Boden legen</option>
+</select>
 
-<button onclick="addPosition()">Hinzufügen</button>
+<div id="gewerkBereich"></div>
+
+<button onclick="positionHinzufuegen()">Position hinzufügen</button>
 </div>
 
 <div class="section">
@@ -84,31 +79,21 @@ button,.no-print{display:none}
 </tr>
 </table>
 
-<div class="summe" id="summe"></div>
+<div class="summe" id="gesamt"></div>
 </div>
 
-<div class="section">
-<label>Zahlungsziel
-<input value="Zahlbar innerhalb von 14 Tagen ohne Abzug.">
-</label>
-
-<label>
-<input type="checkbox" id="bankToggle" onchange="toggleBank()">
-Bankverbindung anzeigen
-</label>
-
-<div id="bank" style="display:none">
-<p>Bank: Musterbank<br>
-IBAN: DE00 0000 0000 0000 0000 00<br>
-BIC: XXXXXXXX</p>
-</div>
+<div class="section no-print">
+<button onclick="angebotSpeichern()">Angebot speichern</button>
+<button onclick="angebotLaden()">Gespeichertes Angebot laden</button>
+<button onclick="window.print()">Als PDF speichern</button>
 </div>
 
 </div>
 
 <script>
 let counter = localStorage.getItem("angebotCounter") || 1;
-let gesamt = 0;
+let gesamtNetto = 0;
+let positionen = [];
 
 function generateNr(){
 let jahr = new Date().getFullYear();
@@ -117,17 +102,68 @@ jahr + "-" + String(counter).padStart(4,"0");
 }
 generateNr();
 
-function addPosition(){
-let bez = document.getElementById("bez").value;
+function gewerkWechsel(){
+let gewerk = document.getElementById("gewerk").value;
+let html = "";
+
+if(gewerk==="hecke"){
+html=`
+<label>Schnittart
+<select id="schnittart">
+<option value="10">Grundschnitt (6–15 €/m)</option>
+<option value="20">Formschnitt (12–28 €/m)</option>
+<option value="30">Radikalschnitt (15–35 €/m)</option>
+</select></label>
+<label>Länge (m)<input type="number" id="menge"></label>
+<label>Preis pro Meter (€)<input type="number" id="preis"></label>
+<label>Entsorgung (m³)<input type="number" id="entsorgung"></label>
+<label>Preis Entsorgung €/m³<input type="number" id="entsorgungPreis"></label>
+`;
+}
+
+if(gewerk==="maler"){
+html=`
+<label>Fläche (m²)<input type="number" id="menge"></label>
+<label>Preis pro m² (€)<input type="number" id="preis"></label>
+`;
+}
+
+if(gewerk==="rasen"){
+html=`
+<label>Fläche (m²)<input type="number" id="menge"></label>
+<label>Preis pro m² (€)<input type="number" id="preis"></label>
+`;
+}
+
+if(gewerk==="boden"){
+html=`
+<label>Fläche (m²)<input type="number" id="menge"></label>
+<label>Preis pro m² (€)<input type="number" id="preis"></label>
+`;
+}
+
+document.getElementById("gewerkBereich").innerHTML = html;
+}
+gewerkWechsel();
+
+function positionHinzufuegen(){
+
+let gewerk = document.getElementById("gewerk").value;
 let menge = parseFloat(document.getElementById("menge").value)||0;
 let preis = parseFloat(document.getElementById("preis").value)||0;
-
 let sum = menge*preis;
-gesamt += sum;
+
+if(gewerk==="hecke"){
+let ents = parseFloat(document.getElementById("entsorgung").value)||0;
+let entsPreis = parseFloat(document.getElementById("entsorgungPreis").value)||0;
+sum += ents*entsPreis;
+}
+
+gesamtNetto += sum;
 
 let row = document.createElement("tr");
 row.innerHTML = `
-<td>${bez}</td>
+<td>${gewerk}</td>
 <td>${menge}</td>
 <td>${preis.toFixed(2)} €</td>
 <td>${sum.toFixed(2)} €</td>
@@ -135,33 +171,46 @@ row.innerHTML = `
 `;
 document.getElementById("tabelle").appendChild(row);
 
+positionen.push({gewerk,menge,preis,sum});
 updateSum();
 }
 
 function deleteRow(btn,sum){
 btn.parentNode.parentNode.remove();
-gesamt -= sum;
+gesamtNetto -= sum;
 updateSum();
 }
 
 function updateSum(){
-let mwst = gesamt*0.19;
-let brutto = gesamt+mwst;
-document.getElementById("summe").innerHTML =
-"Netto: "+gesamt.toFixed(2)+" €<br>"+
+let mwst = gesamtNetto*0.19;
+let brutto = gesamtNetto+mwst;
+document.getElementById("gesamt").innerHTML =
+"Netto: "+gesamtNetto.toFixed(2)+" €<br>"+
 "MwSt (19%): "+mwst.toFixed(2)+" €<br>"+
 "Brutto: "+brutto.toFixed(2)+" €";
 }
 
-function toggleBank(){
-document.getElementById("bank").style.display =
-document.getElementById("bankToggle").checked?"block":"none";
+function angebotSpeichern(){
+let daten = {
+kunde:document.getElementById("kunde").value,
+adresse:document.getElementById("adresse").value,
+telefon:document.getElementById("telefon").value,
+email:document.getElementById("email").value,
+positionen:positionen,
+gesamt:gesamtNetto
+};
+localStorage.setItem("kcAngebot",JSON.stringify(daten));
+alert("Angebot gespeichert");
 }
 
-window.onafterprint = function(){
-counter++;
-localStorage.setItem("angebotCounter",counter);
-generateNr();
+function angebotLaden(){
+let daten = JSON.parse(localStorage.getItem("kcAngebot"));
+if(!daten){alert("Kein gespeichertes Angebot");return;}
+document.getElementById("kunde").value=daten.kunde;
+document.getElementById("adresse").value=daten.adresse;
+document.getElementById("telefon").value=daten.telefon;
+document.getElementById("email").value=daten.email;
+alert("Kundendaten geladen");
 }
 </script>
 
