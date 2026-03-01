@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KC Service – Profi Angebot</title>
+<title>K&C Service – Profi Angebot</title>
 
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,13 +12,14 @@
 body{font-family:Arial;margin:0;padding:20px;background:#f2f2f2}
 .container{background:white;padding:30px;max-width:1000px;margin:auto;
 box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-.header{display:flex;justify-content:space-between;align-items:center}
+.header{display:flex;justify-content:space-between;align-items:flex-start}
 .logo{height:80px}
+.firma h1{margin:0}
 .section{margin-top:20px}
 label{display:block;margin-top:6px}
 input,select{width:100%;padding:6px;margin-top:3px}
 button{margin-top:10px;padding:8px 12px;border:none;
-background:#2e7d32;color:white;border-radius:6px}
+background:#1b5e20;color:white;border-radius:6px}
 table{width:100%;border-collapse:collapse;margin-top:10px}
 th,td{border:1px solid #ccc;padding:6px;text-align:left}
 .summe{margin-top:15px;font-size:18px;font-weight:bold}
@@ -34,15 +35,21 @@ body{background:white}
 
 <div class="container">
 
+<!-- Kopfbereich -->
 <div class="header">
-<div>
-<h1>KC Service</h1>
+<div class="firma">
+<h1>K&C Service</h1>
 <p>Maler- & Hausmeisterservice</p>
+<p>Telefon: ________<br>
+E-Mail: ________</p>
 </div>
 <img src="apple-touch-icon.png" class="logo">
 </div>
 
+<hr>
+
 <div class="section">
+<h3>Angebotsdaten</h3>
 <label>Angebotsnummer
 <input id="angebotNr" readonly>
 </label>
@@ -53,13 +60,8 @@ body{background:white}
 
 <div class="section">
 <h3>Kundendaten</h3>
-<label>Kunde
-<input id="kunde">
-</label>
-<label>Email
-<input id="email">
-</label>
-
+<label>Kunde<input id="kunde"></label>
+<label>Email<input id="email"></label>
 <button onclick="kundeSpeichern()">Kunde speichern</button>
 <select id="kundenListe" onchange="kundeLaden()">
 <option value="">Kunde auswählen</option>
@@ -81,7 +83,7 @@ body{background:white}
 <table id="tabelle">
 <tr>
 <th>Leistung</th>
-<th>Arbeit</th>
+<th>Arbeitskosten</th>
 <th>Material</th>
 <th>Summe</th>
 <th class="no-print">X</th>
@@ -132,7 +134,6 @@ row.innerHTML = `
 `;
 document.getElementById("tabelle").appendChild(row);
 
-positionen.push({bez,arbeit,material,sum});
 updateSum();
 }
 
@@ -149,25 +150,6 @@ document.getElementById("gesamt").innerHTML =
 "Netto: "+gesamtNetto.toFixed(2)+" €<br>"+
 "MwSt (19%): "+mwst.toFixed(2)+" €<br>"+
 "Brutto: "+brutto.toFixed(2)+" €";
-}
-
-function angebotSpeichern(){
-let daten={
-kunde:document.getElementById("kunde").value,
-email:document.getElementById("email").value,
-positionen:positionen,
-gesamt:gesamtNetto
-};
-localStorage.setItem("kcAngebot",JSON.stringify(daten));
-alert("Angebot gespeichert");
-}
-
-function angebotLaden(){
-let daten=JSON.parse(localStorage.getItem("kcAngebot"));
-if(!daten){alert("Kein gespeichertes Angebot");return;}
-document.getElementById("kunde").value=daten.kunde;
-document.getElementById("email").value=daten.email;
-alert("Angebot geladen");
 }
 
 function kundeSpeichern(){
@@ -188,13 +170,31 @@ document.getElementById("email").value=
 localStorage.getItem("kunde_"+kunde);
 }
 
+function angebotSpeichern(){
+let daten={
+kunde:document.getElementById("kunde").value,
+email:document.getElementById("email").value,
+gesamt:gesamtNetto
+};
+localStorage.setItem("kcAngebot",JSON.stringify(daten));
+alert("Angebot gespeichert");
+}
+
+function angebotLaden(){
+let daten=JSON.parse(localStorage.getItem("kcAngebot"));
+if(!daten){alert("Kein gespeichertes Angebot");return;}
+document.getElementById("kunde").value=daten.kunde;
+document.getElementById("email").value=daten.email;
+alert("Angebot geladen");
+}
+
 function versenden(){
 let email=document.getElementById("email").value;
 let brutto=(gesamtNetto*1.19).toFixed(2);
 let betreff="Angebot "+document.getElementById("angebotNr").value;
 let text="Sehr geehrte Damen und Herren,%0D%0A%0D%0A"+
 "anbei erhalten Sie unser Angebot über "+brutto+" € brutto.%0D%0A%0D%0A"+
-"Mit freundlichen Grüßen%0D%0AKC Service";
+"Mit freundlichen Grüßen%0D%0AK&C Service";
 
 window.location.href="mailto:"+email+
 "?subject="+betreff+"&body="+text;
