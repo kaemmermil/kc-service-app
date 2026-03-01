@@ -84,6 +84,14 @@ modul.classList.remove("hidden");
 if(kat==="hecke"){
 modul.innerHTML=`
 <h3>Heckenschnitt</h3>
+
+<label>Berechnungsart
+<select id="heckeArt" onchange="heckeArtWechsel()">
+<option value="menge">Nach Meter</option>
+<option value="stunden">Nach Zeit</option>
+</select></label>
+
+<div id="heckeMenge">
 <label>Schnittart
 <select>
 <option>Grundschnitt (6–15 €/m)</option>
@@ -92,10 +100,20 @@ modul.innerHTML=`
 </select></label>
 <label>Länge (m)<input type="number" id="meter"></label>
 <label>Preis pro Meter (€)<input type="number" id="preis"></label>
+</div>
+
+<div id="heckeStunden" class="hidden">
+<label>Arbeitsstunden<input type="number" id="stunden"></label>
+<label>Stundensatz (€)<input type="number" id="satz"></label>
+<label>Material (€)<input type="number" id="material"></label>
+</div>
+
 <label>Entsorgung (m³)<input type="number" id="ents"></label>
 <label>Preis Entsorgung €/m³<input type="number" id="entsPreis"></label>
+
 <label>Hebebühne Stunden<input type="number" id="std"></label>
 <label>Preis Hebebühne €/h<input type="number" id="stdPreis"></label>
+
 <button onclick="heckeAdd()">Hinzufügen</button>
 `;
 }
@@ -125,7 +143,7 @@ modul.innerHTML=`
 
 if(kat==="elektrik"){
 modul.innerHTML=`
-<h3>Elektrik (nur Zeitaufwand)</h3>
+<h3>Elektrik (nur Zeit)</h3>
 <label>Stunden<input type="number" id="stunden"></label>
 <label>Stundensatz (€)<input type="number" id="satz"></label>
 <label>Material (€)<input type="number" id="material"></label>
@@ -134,16 +152,31 @@ modul.innerHTML=`
 }
 }
 
+function heckeArtWechsel(){
+document.getElementById("heckeMenge").classList.toggle("hidden");
+document.getElementById("heckeStunden").classList.toggle("hidden");
+}
+
 function artWechsel(){
 document.getElementById("mengeBereich").classList.toggle("hidden");
 document.getElementById("stundenBereich").classList.toggle("hidden");
 }
 
 function heckeAdd(){
-let sum=
-(parseFloat(meter.value)||0)*(parseFloat(preis.value)||0)+
+let art=document.getElementById("heckeArt").value;
+let sum=0;
+
+if(art==="menge"){
+sum=(parseFloat(meter.value)||0)*(parseFloat(preis.value)||0);
+}else{
+sum=(parseFloat(stunden.value)||0)*(parseFloat(satz.value)||0)+
+(parseFloat(material.value)||0);
+}
+
+sum+=
 (parseFloat(ents.value)||0)*(parseFloat(entsPreis.value)||0)+
 (parseFloat(std.value)||0)*(parseFloat(stdPreis.value)||0);
+
 addRow("Heckenschnitt",sum);
 }
 
