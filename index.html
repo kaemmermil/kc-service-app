@@ -12,7 +12,8 @@
 body{font-family:Arial;margin:0;padding:20px;background:#f2f2f2}
 .container{background:white;padding:30px;max-width:1000px;margin:auto;
 box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-h1{margin:0}
+.header{display:flex;justify-content:space-between;align-items:center}
+.logo{height:80px}
 .section{margin-top:20px}
 label{display:block;margin-top:6px}
 input,select{width:100%;padding:6px;margin-top:3px}
@@ -33,7 +34,13 @@ body{background:white}
 
 <div class="container">
 
-<h1>KC Service – Angebot</h1>
+<div class="header">
+<div>
+<h1>KC Service</h1>
+<p>Maler- & Hausmeisterservice</p>
+</div>
+<img src="apple-touch-icon.png" class="logo">
+</div>
 
 <div class="section">
 <label>Angebotsnummer
@@ -46,25 +53,27 @@ body{background:white}
 
 <div class="section">
 <h3>Kundendaten</h3>
-<label>Kunde<input id="kunde"></label>
-<label>Adresse<input id="adresse"></label>
-<label>Telefon<input id="telefon"></label>
-<label>Email<input id="email"></label>
+<label>Kunde
+<input id="kunde">
+</label>
+<label>Email
+<input id="email">
+</label>
+
+<button onclick="kundeSpeichern()">Kunde speichern</button>
+<select id="kundenListe" onchange="kundeLaden()">
+<option value="">Kunde auswählen</option>
+</select>
 </div>
 
 <div class="section no-print">
-<h3>Gewerk wählen</h3>
+<h3>Position hinzufügen</h3>
+<label>Bezeichnung<input id="bez"></label>
+<label>Arbeitszeit (Std)<input type="number" id="stunden"></label>
+<label>Stundensatz (€)<input type="number" id="stundensatz"></label>
+<label>Materialkosten (€)<input type="number" id="material"></label>
 
-<select id="gewerk" onchange="gewerkWechsel()">
-<option value="hecke">Heckenschnitt</option>
-<option value="maler">Malerarbeiten</option>
-<option value="rasen">Rasen mähen</option>
-<option value="boden">Boden legen</option>
-</select>
-
-<div id="gewerkBereich"></div>
-
-<button onclick="positionHinzufuegen()">Position hinzufügen</button>
+<button onclick="addPosition()">Hinzufügen</button>
 </div>
 
 <div class="section">
@@ -72,8 +81,8 @@ body{background:white}
 <table id="tabelle">
 <tr>
 <th>Leistung</th>
-<th>Menge</th>
-<th>Einzelpreis</th>
+<th>Arbeit</th>
+<th>Material</th>
 <th>Summe</th>
 <th class="no-print">X</th>
 </tr>
@@ -85,6 +94,7 @@ body{background:white}
 <div class="section no-print">
 <button onclick="angebotSpeichern()">Angebot speichern</button>
 <button onclick="angebotLaden()">Gespeichertes Angebot laden</button>
+<button onclick="versenden()">Angebot per Mail versenden</button>
 <button onclick="window.print()">Als PDF speichern</button>
 </div>
 
@@ -102,76 +112,27 @@ jahr + "-" + String(counter).padStart(4,"0");
 }
 generateNr();
 
-function gewerkWechsel(){
-let gewerk = document.getElementById("gewerk").value;
-let html = "";
+function addPosition(){
+let bez = document.getElementById("bez").value;
+let std = parseFloat(document.getElementById("stunden").value)||0;
+let satz = parseFloat(document.getElementById("stundensatz").value)||0;
+let material = parseFloat(document.getElementById("material").value)||0;
 
-if(gewerk==="hecke"){
-html=`
-<label>Schnittart
-<select id="schnittart">
-<option value="10">Grundschnitt (6–15 €/m)</option>
-<option value="20">Formschnitt (12–28 €/m)</option>
-<option value="30">Radikalschnitt (15–35 €/m)</option>
-</select></label>
-<label>Länge (m)<input type="number" id="menge"></label>
-<label>Preis pro Meter (€)<input type="number" id="preis"></label>
-<label>Entsorgung (m³)<input type="number" id="entsorgung"></label>
-<label>Preis Entsorgung €/m³<input type="number" id="entsorgungPreis"></label>
-`;
-}
-
-if(gewerk==="maler"){
-html=`
-<label>Fläche (m²)<input type="number" id="menge"></label>
-<label>Preis pro m² (€)<input type="number" id="preis"></label>
-`;
-}
-
-if(gewerk==="rasen"){
-html=`
-<label>Fläche (m²)<input type="number" id="menge"></label>
-<label>Preis pro m² (€)<input type="number" id="preis"></label>
-`;
-}
-
-if(gewerk==="boden"){
-html=`
-<label>Fläche (m²)<input type="number" id="menge"></label>
-<label>Preis pro m² (€)<input type="number" id="preis"></label>
-`;
-}
-
-document.getElementById("gewerkBereich").innerHTML = html;
-}
-gewerkWechsel();
-
-function positionHinzufuegen(){
-
-let gewerk = document.getElementById("gewerk").value;
-let menge = parseFloat(document.getElementById("menge").value)||0;
-let preis = parseFloat(document.getElementById("preis").value)||0;
-let sum = menge*preis;
-
-if(gewerk==="hecke"){
-let ents = parseFloat(document.getElementById("entsorgung").value)||0;
-let entsPreis = parseFloat(document.getElementById("entsorgungPreis").value)||0;
-sum += ents*entsPreis;
-}
-
+let arbeit = std*satz;
+let sum = arbeit + material;
 gesamtNetto += sum;
 
 let row = document.createElement("tr");
 row.innerHTML = `
-<td>${gewerk}</td>
-<td>${menge}</td>
-<td>${preis.toFixed(2)} €</td>
+<td>${bez}</td>
+<td>${arbeit.toFixed(2)} €</td>
+<td>${material.toFixed(2)} €</td>
 <td>${sum.toFixed(2)} €</td>
 <td class="no-print"><button onclick="deleteRow(this,${sum})">X</button></td>
 `;
 document.getElementById("tabelle").appendChild(row);
 
-positionen.push({gewerk,menge,preis,sum});
+positionen.push({bez,arbeit,material,sum});
 updateSum();
 }
 
@@ -191,10 +152,8 @@ document.getElementById("gesamt").innerHTML =
 }
 
 function angebotSpeichern(){
-let daten = {
+let daten={
 kunde:document.getElementById("kunde").value,
-adresse:document.getElementById("adresse").value,
-telefon:document.getElementById("telefon").value,
 email:document.getElementById("email").value,
 positionen:positionen,
 gesamt:gesamtNetto
@@ -204,13 +163,41 @@ alert("Angebot gespeichert");
 }
 
 function angebotLaden(){
-let daten = JSON.parse(localStorage.getItem("kcAngebot"));
+let daten=JSON.parse(localStorage.getItem("kcAngebot"));
 if(!daten){alert("Kein gespeichertes Angebot");return;}
 document.getElementById("kunde").value=daten.kunde;
-document.getElementById("adresse").value=daten.adresse;
-document.getElementById("telefon").value=daten.telefon;
 document.getElementById("email").value=daten.email;
-alert("Kundendaten geladen");
+alert("Angebot geladen");
+}
+
+function kundeSpeichern(){
+let kunde=document.getElementById("kunde").value;
+let email=document.getElementById("email").value;
+localStorage.setItem("kunde_"+kunde,email);
+let option=document.createElement("option");
+option.value=kunde;
+option.textContent=kunde;
+document.getElementById("kundenListe").appendChild(option);
+}
+
+function kundeLaden(){
+let kunde=document.getElementById("kundenListe").value;
+if(!kunde)return;
+document.getElementById("kunde").value=kunde;
+document.getElementById("email").value=
+localStorage.getItem("kunde_"+kunde);
+}
+
+function versenden(){
+let email=document.getElementById("email").value;
+let brutto=(gesamtNetto*1.19).toFixed(2);
+let betreff="Angebot "+document.getElementById("angebotNr").value;
+let text="Sehr geehrte Damen und Herren,%0D%0A%0D%0A"+
+"anbei erhalten Sie unser Angebot über "+brutto+" € brutto.%0D%0A%0D%0A"+
+"Mit freundlichen Grüßen%0D%0AKC Service";
+
+window.location.href="mailto:"+email+
+"?subject="+betreff+"&body="+text;
 }
 </script>
 
