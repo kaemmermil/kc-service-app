@@ -3,227 +3,255 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K&C Service – Angebot</title>
+<title>K&C Service – Kalkulation & Rechnung</title>
 
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
 <style>
-body{font-family:Arial;margin:0;padding:20px;background:#f2f2f2}
-.container{background:white;padding:30px;max-width:1000px;margin:auto;
-box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-.header{display:flex;justify-content:space-between}
-.logo{height:80px}
-.section{margin-top:20px}
-label{display:block;margin-top:6px}
-input,select{width:100%;padding:6px;margin-top:3px}
-button{margin-top:10px;padding:8px;border:none;
-background:#1b5e20;color:white;border-radius:6px}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border:1px solid #ccc;padding:6px}
-.summe{margin-top:15px;font-size:18px;font-weight:bold}
-.hidden{display:none}
-@media print{
-button,.no-print{display:none}
-body{background:white}
-.container{box-shadow:none}
+body{
+    font-family:Arial;
+    margin:0;
+    padding:20px;
+    background:#f4f4f4;
+}
+
+header{
+    background:#1b5e20;
+    color:white;
+    padding:15px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin-top:20px;
+    border-radius:8px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+input, select{
+    padding:8px;
+    margin:5px 0;
+    width:100%;
+}
+
+button{
+    padding:10px;
+    margin-top:10px;
+    background:#1b5e20;
+    color:white;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.result{
+    font-weight:bold;
+    font-size:18px;
+    margin-top:10px;
 }
 </style>
 </head>
+
 <body>
 
-<div class="container">
-
-<div class="header">
-<div>
+<header>
 <h1>K&C Service</h1>
-<p>Maler- & Hausmeisterservice</p>
-</div>
-<img src="apple-touch-icon.png" class="logo">
-</div>
+</header>
 
-<hr>
+<div class="card">
 
-<div class="section">
-<h3>Kategorie wählen</h3>
-<select id="kategorie" onchange="kategorieWechsel()">
-<option value="">-- Bitte wählen --</option>
-<option value="hecke">Heckenschnitt</option>
+<h3>Kunde</h3>
+<input id="kundeName" placeholder="Name">
+<input id="kundeAdresse" placeholder="Adresse">
+<input id="kundeEmail" placeholder="E-Mail">
+
+<h3>Arbeitskategorie</h3>
+<select id="kategorie" onchange="zeigeKategorie()">
+<option value="">Bitte wählen</option>
+<option value="hecke">Hecke schneiden</option>
 <option value="maler">Malerarbeiten</option>
 <option value="rasen">Rasen mähen</option>
 <option value="boden">Boden legen</option>
 <option value="elektrik">Elektrik</option>
 </select>
-</div>
 
-<div id="modul" class="section hidden no-print"></div>
+<div id="kalkulation"></div>
 
-<div class="section">
-<h3>Leistungsübersicht</h3>
-<table id="tabelle">
-<tr>
-<th>Leistung</th>
-<th>Summe</th>
-<th class="no-print">X</th>
-</tr>
-</table>
+<div class="result" id="ergebnis"></div>
 
-<div class="summe" id="gesamt"></div>
-<button class="no-print" onclick="window.print()">Als PDF speichern</button>
-</div>
+<button onclick="berechnen()">Preis berechnen</button>
+<button onclick="rechnungErstellen()">Rechnung erstellen (PDF)</button>
+<button onclick="angebotSenden()">Angebot per Mail senden</button>
 
 </div>
 
 <script>
-let gesamtNetto=0;
 
-function kategorieWechsel(){
-let kat=document.getElementById("kategorie").value;
-let modul=document.getElementById("modul");
-modul.classList.remove("hidden");
+let aktuellerPreis = 0;
+
+function zeigeKategorie(){
+
+let kat = document.getElementById("kategorie").value;
+let html = "";
 
 if(kat==="hecke"){
-modul.innerHTML=`
-<h3>Heckenschnitt</h3>
-
-<label>Berechnungsart
-<select id="heckeArt" onchange="heckeArtWechsel()">
+html = `
+<h4>Hecke schneiden</h4>
+<select id="heckeArt">
+<option value="1">Leicht (1)</option>
+<option value="1.3">Mittel (1.3)</option>
+<option value="1.6">Schwer (1.6)</option>
+</select>
+<select id="heckeModus">
+<option value="zeit">Nach Zeit</option>
 <option value="menge">Nach Meter</option>
-<option value="stunden">Nach Zeit</option>
-</select></label>
-
-<div id="heckeMenge">
-<label>Schnittart
-<select>
-<option>Grundschnitt (6–15 €/m)</option>
-<option>Formschnitt (12–28 €/m)</option>
-<option>Radikalschnitt (15–35 €/m)</option>
-</select></label>
-<label>Länge (m)<input type="number" id="meter"></label>
-<label>Preis pro Meter (€)<input type="number" id="preis"></label>
-</div>
-
-<div id="heckeStunden" class="hidden">
-<label>Arbeitsstunden<input type="number" id="stunden"></label>
-<label>Stundensatz (€)<input type="number" id="satz"></label>
-<label>Material (€)<input type="number" id="material"></label>
-</div>
-
-<label>Entsorgung (m³)<input type="number" id="ents"></label>
-<label>Preis Entsorgung €/m³<input type="number" id="entsPreis"></label>
-
-<label>Hebebühne Stunden<input type="number" id="std"></label>
-<label>Preis Hebebühne €/h<input type="number" id="stdPreis"></label>
-
-<button onclick="heckeAdd()">Hinzufügen</button>
+</select>
+<input id="stunden" placeholder="Stunden">
+<input id="meter" placeholder="Meter">
+<input id="stundenPreis" placeholder="Stundensatz (€)">
+<input id="meterPreis" placeholder="Preis pro Meter (€)">
 `;
 }
 
-if(kat==="maler"||kat==="rasen"||kat==="boden"){
-modul.innerHTML=`
-<label>Berechnungsart
-<select id="art" onchange="artWechsel()">
-<option value="menge">Nach m²</option>
-<option value="stunden">Nach Zeit</option>
-</select></label>
+if(kat==="maler"){
+html = `
+<h4>Malerarbeiten</h4>
+<select id="malerModus">
+<option value="zeit">Nach Zeit</option>
+<option value="flaeche">Nach m²</option>
+</select>
+<input id="stunden" placeholder="Stunden">
+<input id="qm" placeholder="Quadratmeter">
+<input id="stundenPreis" placeholder="Stundensatz (€)">
+<input id="qmPreis" placeholder="Preis pro m² (€)">
+`;
+}
 
-<div id="mengeBereich">
-<label>Menge (m²)<input type="number" id="menge"></label>
-<label>Preis pro m² (€)<input type="number" id="preis"></label>
-</div>
+if(kat==="rasen"){
+html = `
+<h4>Rasen mähen</h4>
+<select id="rasenModus">
+<option value="zeit">Nach Zeit</option>
+<option value="flaeche">Nach m²</option>
+</select>
+<input id="stunden" placeholder="Stunden">
+<input id="qm" placeholder="Fläche m²">
+<input id="stundenPreis" placeholder="Stundensatz (€)">
+<input id="qmPreis" placeholder="Preis pro m² (€)">
+`;
+}
 
-<div id="stundenBereich" class="hidden">
-<label>Stunden<input type="number" id="stunden"></label>
-<label>Stundensatz (€)<input type="number" id="satz"></label>
-<label>Material (€)<input type="number" id="material"></label>
-</div>
-
-<button onclick="standardAdd('${kat}')">Hinzufügen</button>
+if(kat==="boden"){
+html = `
+<h4>Boden legen</h4>
+<select id="bodenModus">
+<option value="zeit">Nach Zeit</option>
+<option value="flaeche">Nach m²</option>
+</select>
+<input id="stunden" placeholder="Stunden">
+<input id="qm" placeholder="Quadratmeter">
+<input id="stundenPreis" placeholder="Stundensatz (€)">
+<input id="qmPreis" placeholder="Preis pro m² (€)">
 `;
 }
 
 if(kat==="elektrik"){
-modul.innerHTML=`
-<h3>Elektrik (nur Zeit)</h3>
-<label>Stunden<input type="number" id="stunden"></label>
-<label>Stundensatz (€)<input type="number" id="satz"></label>
-<label>Material (€)<input type="number" id="material"></label>
-<button onclick="elektrikAdd()">Hinzufügen</button>
+html = `
+<h4>Elektrik</h4>
+<input id="stunden" placeholder="Stunden">
+<input id="stundenPreis" placeholder="Stundensatz (€)">
 `;
 }
+
+document.getElementById("kalkulation").innerHTML = html;
+document.getElementById("ergebnis").innerHTML = "";
 }
 
-function heckeArtWechsel(){
-document.getElementById("heckeMenge").classList.toggle("hidden");
-document.getElementById("heckeStunden").classList.toggle("hidden");
-}
+function berechnen(){
 
-function artWechsel(){
-document.getElementById("mengeBereich").classList.toggle("hidden");
-document.getElementById("stundenBereich").classList.toggle("hidden");
-}
+let kat = document.getElementById("kategorie").value;
+let preis = 0;
 
-function heckeAdd(){
-let art=document.getElementById("heckeArt").value;
-let sum=0;
+if(kat==="hecke"){
+let art = parseFloat(document.getElementById("heckeArt").value);
+let modus = document.getElementById("heckeModus").value;
 
-if(art==="menge"){
-sum=(parseFloat(meter.value)||0)*(parseFloat(preis.value)||0);
+if(modus==="zeit"){
+let std = parseFloat(document.getElementById("stunden").value) || 0;
+let stdPreis = parseFloat(document.getElementById("stundenPreis").value) || 0;
+preis = std * stdPreis * art;
 }else{
-sum=(parseFloat(stunden.value)||0)*(parseFloat(satz.value)||0)+
-(parseFloat(material.value)||0);
+let meter = parseFloat(document.getElementById("meter").value) || 0;
+let meterPreis = parseFloat(document.getElementById("meterPreis").value) || 0;
+preis = meter * meterPreis * art;
+}
 }
 
-sum+=
-(parseFloat(ents.value)||0)*(parseFloat(entsPreis.value)||0)+
-(parseFloat(std.value)||0)*(parseFloat(stdPreis.value)||0);
+if(kat==="maler" || kat==="rasen" || kat==="boden"){
+let modus = document.querySelector("select[id$='Modus']").value;
 
-addRow("Heckenschnitt",sum);
-}
-
-function standardAdd(text){
-let art=document.getElementById("art").value;
-let sum=0;
-if(art==="menge"){
-sum=(parseFloat(menge.value)||0)*(parseFloat(preis.value)||0);
+if(modus==="zeit"){
+let std = parseFloat(document.getElementById("stunden").value) || 0;
+let stdPreis = parseFloat(document.getElementById("stundenPreis").value) || 0;
+preis = std * stdPreis;
 }else{
-sum=(parseFloat(stunden.value)||0)*(parseFloat(satz.value)||0)+
-(parseFloat(material.value)||0);
+let qm = parseFloat(document.getElementById("qm").value) || 0;
+let qmPreis = parseFloat(document.getElementById("qmPreis").value) || 0;
+preis = qm * qmPreis;
 }
-addRow(text,sum);
-}
-
-function elektrikAdd(){
-let sum=(parseFloat(stunden.value)||0)*(parseFloat(satz.value)||0)+
-(parseFloat(material.value)||0);
-addRow("Elektrik",sum);
 }
 
-function addRow(text,sum){
-gesamtNetto+=sum;
-let row=document.createElement("tr");
-row.innerHTML=`
-<td>${text}</td>
-<td>${sum.toFixed(2)} €</td>
-<td class="no-print"><button onclick="deleteRow(this,${sum})">X</button></td>
+if(kat==="elektrik"){
+let std = parseFloat(document.getElementById("stunden").value) || 0;
+let stdPreis = parseFloat(document.getElementById("stundenPreis").value) || 0;
+preis = std * stdPreis;
+}
+
+aktuellerPreis = preis;
+document.getElementById("ergebnis").innerHTML =
+"Gesamtpreis: " + preis.toFixed(2) + " €";
+}
+
+function rechnungErstellen(){
+
+let name = document.getElementById("kundeName").value;
+let adresse = document.getElementById("kundeAdresse").value;
+let datum = new Date().toLocaleDateString();
+
+let rechnungsNummer = "R-" + Date.now();
+
+let inhalt = `
+Rechnung ${rechnungsNummer}
+Datum: ${datum}
+
+Kunde:
+${name}
+${adresse}
+
+Leistung: ${document.getElementById("kategorie").value}
+
+Gesamtbetrag: ${aktuellerPreis.toFixed(2)} €
 `;
-document.getElementById("tabelle").appendChild(row);
-updateSum();
+
+let blob = new Blob([inhalt], {type:"text/plain"});
+let a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "Rechnung_" + rechnungsNummer + ".txt";
+a.click();
 }
 
-function deleteRow(btn,sum){
-btn.parentNode.parentNode.remove();
-gesamtNetto-=sum;
-updateSum();
+function angebotSenden(){
+
+let email = document.getElementById("kundeEmail").value;
+let text = "Angebot von K&C Service: " + aktuellerPreis.toFixed(2) + " €";
+
+window.location.href =
+"mailto:" + email +
+"?subject=Angebot K&C Service" +
+"&body=" + encodeURIComponent(text);
 }
 
-function updateSum(){
-let mwst=gesamtNetto*0.19;
-let brutto=gesamtNetto+mwst;
-document.getElementById("gesamt").innerHTML=
-"Netto: "+gesamtNetto.toFixed(2)+" €<br>"+
-"MwSt 19%: "+mwst.toFixed(2)+" €<br>"+
-"Brutto: "+brutto.toFixed(2)+" €";
-}
 </script>
 
 </body>
