@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K&C Service – Professional System</title>
+<title>C&K Service – Kalkulation & Rechnung</title>
 
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
@@ -24,7 +23,8 @@ th,td{border:1px solid #ccc;padding:6px;text-align:left}
 <body>
 
 <header>
-<h1>K&C Service – Kalkulation & Rechnung</h1>
+<h1>C&K Service</h1>
+<div style="font-size:14px;">Service rund ums Haus</div>
 </header>
 
 <div class="card">
@@ -72,56 +72,71 @@ let html="";
 
 if(kat==="Hecke"){
 html=`
-<h4>Hecke – Detailkalkulation</h4>
+<h4>Hecke – Vollkalkulation</h4>
 <input id="meter" placeholder="Meter">
 <input id="hoehe" placeholder="Höhe (m)">
-<input id="schnittgrad" placeholder="Schwierigkeitsfaktor (1-2)">
-<input id="entsorgung" placeholder="Entsorgungskosten">
-<input id="fahrt" placeholder="Fahrtkosten">
-<input id="stunden" placeholder="Stunden">
+<input id="breite" placeholder="Breite (m)">
+<input id="faktor" placeholder="Schwierigkeitsfaktor (1-2)">
+<input id="stunden" placeholder="Arbeitsstunden">
 <input id="stundenPreis" placeholder="Stundensatz">
+<input id="entsorgung" placeholder="Entsorgung">
+<input id="maschinen" placeholder="Maschinenkosten">
+<input id="fahrt" placeholder="Anfahrt">
+<input id="geruest" placeholder="Gerüst / Absicherung">
+<input id="rabatt" placeholder="Rabatt %">
 `;
 }
 
 if(kat==="Maler"){
 html=`
-<h4>Malerarbeiten</h4>
-<input id="qm" placeholder="m²">
-<input id="material" placeholder="Materialkosten">
-<input id="grundierung" placeholder="Grundierungskosten">
-<input id="stunden" placeholder="Stunden">
+<h4>Malerarbeiten – Detail</h4>
+<input id="qm" placeholder="m² Fläche">
+<input id="materialQm" placeholder="Material €/m²">
+<input id="grundierungQm" placeholder="Grundierung €/m²">
+<input id="spachtel" placeholder="Spachtelarbeiten">
+<input id="stunden" placeholder="Arbeitsstunden">
 <input id="stundenPreis" placeholder="Stundensatz">
+<input id="geruest" placeholder="Gerüst">
+<input id="rabatt" placeholder="Rabatt %">
 `;
 }
 
 if(kat==="Rasen"){
 html=`
-<h4>Rasen</h4>
+<h4>Rasenpflege – Detail</h4>
 <input id="flaeche" placeholder="Fläche m²">
 <input id="entsorgung" placeholder="Entsorgung">
 <input id="maschinen" placeholder="Maschinenkosten">
-<input id="stunden" placeholder="Stunden">
+<input id="duenger" placeholder="Düngung">
+<input id="stunden" placeholder="Arbeitsstunden">
 <input id="stundenPreis" placeholder="Stundensatz">
+<input id="rabatt" placeholder="Rabatt %">
 `;
 }
 
 if(kat==="Boden"){
 html=`
-<h4>Boden legen</h4>
+<h4>Boden legen – Detail</h4>
 <input id="qm" placeholder="m²">
 <input id="material" placeholder="Materialkosten">
 <input id="kleber" placeholder="Kleber / Zubehör">
-<input id="stunden" placeholder="Stunden">
+<input id="trittschall" placeholder="Trittschalldämmung">
+<input id="stunden" placeholder="Arbeitsstunden">
 <input id="stundenPreis" placeholder="Stundensatz">
+<input id="rabatt" placeholder="Rabatt %">
 `;
 }
 
 if(kat==="Elektrik"){
 html=`
-<h4>Elektrik</h4>
+<h4>Elektrik – Detail</h4>
 <input id="material" placeholder="Materialkosten">
-<input id="stunden" placeholder="Stunden">
+<input id="verteiler" placeholder="Verteiler / Sicherungskasten">
+<input id="messung" placeholder="Messprotokoll">
+<input id="fahrt" placeholder="Anfahrt">
+<input id="stunden" placeholder="Arbeitsstunden">
 <input id="stundenPreis" placeholder="Stundensatz">
+<input id="rabatt" placeholder="Rabatt %">
 `;
 }
 
@@ -137,13 +152,17 @@ let std=parseFloat(document.getElementById("stunden")?.value)||0;
 let stdPreis=parseFloat(document.getElementById("stundenPreis")?.value)||0;
 netto+=std*stdPreis;
 
-let ids=["meter","hoehe","schnittgrad","entsorgung","fahrt","qm","material","grundierung","flaeche","maschinen","kleber"];
+let felder=["meter","hoehe","breite","faktor","entsorgung","maschinen","fahrt","geruest","qm","materialQm","grundierungQm","spachtel","flaeche","duenger","material","kleber","trittschall","verteiler","messung"];
 
-ids.forEach(id=>{
+felder.forEach(id=>{
 if(document.getElementById(id)){
-netto+=parseFloat(document.getElementById(id).value)||0;
+let val=parseFloat(document.getElementById(id).value)||0;
+netto+=val;
 }
 });
+
+let rabatt=parseFloat(document.getElementById("rabatt")?.value)||0;
+netto=netto*(1-rabatt/100);
 
 positionen.push({leistung:kat,netto:netto});
 renderPositionen();
@@ -154,7 +173,6 @@ let table=document.getElementById("positionsTabelle");
 table.innerHTML="<tr><th>Leistung</th><th>Netto</th></tr>";
 
 let summe=0;
-
 positionen.forEach(p=>{
 table.innerHTML+=`<tr><td>${p.leistung}</td><td>${p.netto.toFixed(2)} €</td></tr>`;
 summe+=p.netto;
@@ -165,7 +183,7 @@ let brutto=summe+mwst;
 
 document.getElementById("gesamt").innerHTML=
 "Netto: "+summe.toFixed(2)+" €<br>"+
-"MwSt: "+mwst.toFixed(2)+" €<br>"+
+"MwSt 19%: "+mwst.toFixed(2)+" €<br>"+
 "Brutto: "+brutto.toFixed(2)+" €";
 }
 
@@ -176,24 +194,30 @@ const doc=new jsPDF();
 
 let name=document.getElementById("kundeName").value;
 let adresse=document.getElementById("kundeAdresse").value;
-
 let datum=new Date();
 let nummer="R-"+datum.getFullYear()+"-"+Date.now().toString().slice(-4);
 
 doc.setFontSize(18);
-doc.text("K&C Service",20,20);
+doc.text("C&K Service",20,20);
+doc.setFontSize(11);
+doc.text("Service rund ums Haus",20,26);
+
+doc.setFontSize(9);
+doc.text("Musterstraße 1",20,34);
+doc.text("12345 Musterstadt",20,39);
+doc.text("Tel: 01234 567890",20,44);
 
 doc.setFontSize(10);
 doc.text("Rechnung "+nummer,150,20);
 doc.text("Datum: "+datum.toLocaleDateString(),150,26);
 
-doc.text("Kunde:",20,40);
-doc.text(name,20,46);
-doc.text(adresse,20,52);
+doc.text("Rechnung an:",20,55);
+doc.text(name,20,62);
+doc.text(adresse,20,68);
 
-doc.line(20,60,190,60);
+doc.line(20,75,190,75);
 
-let y=70;
+let y=85;
 let summe=0;
 
 positionen.forEach(p=>{
@@ -218,8 +242,12 @@ doc.text(mwst.toFixed(2)+" €",170,y,{align:"right"});
 y+=8;
 
 doc.setFontSize(12);
-doc.text("Gesamt:",140,y);
+doc.text("Gesamtbetrag:",140,y);
 doc.text(brutto.toFixed(2)+" €",170,y,{align:"right"});
+
+y+=12;
+doc.setFontSize(9);
+doc.text("Zahlbar innerhalb von 14 Tagen ohne Abzug.",20,y);
 
 doc.save("Rechnung_"+nummer+".pdf");
 }
