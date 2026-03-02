@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K&C Service ERP</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+</head>
+
+<body>
+
+<header>
+    <h1>K&C Service – Verwaltungssystem</h1>
+    <nav>
+        <button onclick="loadModule('dashboard')">Dashboard</button>
+        <button onclick="loadModule('customers')">Kunden</button>
+        <button onclick="loadModule('offers')">Angebote</button>
+        <button onclick="loadModule('invoices')">Rechnungen</button>
+        <button onclick="loadModule('finance')">Finanzen</button>
+        <button onclick="exportBackup()">Backup</button>
+    </nav>
+</header>
+
+<main id="app"></main>
+
+<script src="js/storage.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/customers.js"></script>
+<script src="js/offers.js"></script>
+<script src="js/invoices.js"></script>
+<script src="js/finance.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
