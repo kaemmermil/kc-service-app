@@ -194,11 +194,13 @@ const doc=new jsPDF();
 
 let name=document.getElementById("kundeName").value;
 let adresse=document.getElementById("kundeAdresse").value;
+
 let datum=new Date();
 let nummer="R-"+datum.getFullYear()+"-"+Date.now().toString().slice(-4);
 
 doc.setFontSize(18);
 doc.text("C&K Service",20,20);
+
 doc.setFontSize(11);
 doc.text("Service rund ums Haus",20,26);
 
@@ -208,16 +210,17 @@ doc.text("12345 Musterstadt",20,39);
 doc.text("Tel: 01234 567890",20,44);
 
 doc.setFontSize(10);
-doc.text("Rechnung "+nummer,150,20);
-doc.text("Datum: "+datum.toLocaleDateString(),150,26);
+doc.text("Rechnung "+nummer,140,20);
+doc.text("Datum: "+datum.toLocaleDateString(),140,26);
 
-doc.text("Rechnung an:",20,55);
-doc.text(name,20,62);
-doc.text(adresse,20,68);
+doc.setFontSize(10);
+doc.text("Rechnung an:",20,60);
+doc.text(name,20,67);
+doc.text(adresse,20,73);
 
-doc.line(20,75,190,75);
+doc.line(20,80,190,80);
 
-let y=85;
+let y=90;
 let summe=0;
 
 positionen.forEach(p=>{
@@ -227,32 +230,32 @@ y+=8;
 summe+=p.netto;
 });
 
-let mwst=summe*mwstSatz;
+doc.line(20,y,190,y);
+y+=12;
+
+let mwst=summe*0.19;
 let brutto=summe+mwst;
 
-doc.line(20,y,190,y);
-y+=10;
+/* --- SUMMENBLOCK RECHTS --- */
 
-doc.text("Netto:",140,y);
+doc.setFontSize(10);
+
+doc.text("Netto:",130,y);
 doc.text(summe.toFixed(2)+" €",170,y,{align:"right"});
 y+=8;
 
-doc.text("MwSt 19%:",140,y);
+doc.text("MwSt 19%:",130,y);
 doc.text(mwst.toFixed(2)+" €",170,y,{align:"right"});
 y+=8;
 
 doc.setFontSize(12);
-doc.text("Gesamtbetrag:",140,y);
+doc.text("Gesamtbetrag:",130,y);
 doc.text(brutto.toFixed(2)+" €",170,y,{align:"right"});
+y+=15;
 
-y+=12;
 doc.setFontSize(9);
 doc.text("Zahlbar innerhalb von 14 Tagen ohne Abzug.",20,y);
 
 doc.save("Rechnung_"+nummer+".pdf");
-}
+}  
 
-</script>
-
-</body>
-</html>
